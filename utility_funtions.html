@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leather AI</title>
+
+  <style>
+    /* ===== RESET ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #0a1a1f, #040607 65%);
+      color: #e8ffff;
+      overflow-x: hidden;
+    }
+
+    /* ===== GLOBAL GLOW ===== */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(0,255,213,0.04),
+          rgba(0,255,213,0.04) 1px,
+          transparent 1px,
+          transparent 40px
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== TOP BAR ===== */
+    header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      background: rgba(0,0,0,0.7);
+      border-bottom: 1px solid rgba(0,255,213,0.4);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      color: #00ffd5;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: calc(100vh - 64px - 60px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      position: relative;
+    }
+
+    .hero-inner {
+      text-align: center;
+      max-width: 900px;
+      z-index: 1;
+    }
+
+    .hero h2 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(90deg, #00ffd5, #ff3cac);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      opacity: 0.85;
+      max-width: 600px;
+      margin: 0 auto 50px;
+      line-height: 1.6;
+    }
+
+    /* ===== CARDS ===== */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 320px));
+      gap: 40px;
+      justify-content: center;
+    }
+
+    .card {
+      position: relative;
+      height: 210px;
+      padding: 26px;
+      border-radius: 18px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(0,255,213,0.18),
+          rgba(255,60,172,0.18)
+        );
+      border: 1px solid rgba(0,255,213,0.6);
+      box-shadow:
+        0 0 35px rgba(0,255,213,0.35),
+        inset 0 0 20px rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+      overflow: hidden;
+    }
+
+    /* glow sweep */
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255,255,255,0.4),
+        transparent
+      );
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+
+    .card:hover::before {
+      transform: translateX(100%);
+    }
+
+    .card:hover {
+      transform: translateY(-12px) scale(1.05);
+      box-shadow:
+        0 0 60px rgba(255,60,172,0.8),
+        inset 0 0 30px rgba(255,255,255,0.08);
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+      line-height: 1.5;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      opacity: 0.6;
+      border-top: 1px solid rgba(0,255,213,0.3);
+      background: rgba(0,0,0,0.6);
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 720px) {
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        width: 90vw;
+        max-width: 360px;
+      }
+    }
+    /* ===== ADMIN BUTTON ===== */
+    .admin-btn {
+    margin-left: auto;
+    padding: 8px 18px;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: #00ffd5;
+    background: transparent;
+    border: 1px solid rgba(0,255,213,0.7);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 
+        background 0.3s ease,
+        box-shadow 0.3s ease,
+        transform 0.25s ease;
+    }
+
+    .admin-btn:hover {
+    background: rgba(0,255,213,0.15);
+    box-shadow: 0 0 20px rgba(0,255,213,0.8);
+    transform: translateY(-2px);
+    }
+
+    .admin-btn:active {
+    transform: scale(0.96);
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>LEATHER_AI</h1>
+
+  <button class="admin-btn" onclick="window.location.href='admin.html'">
+    ADMIN
+  </button>
+</header>
+
+
+  <section class="hero">
+    <div class="hero-inner">
+      <h2>Testing Leather</h2>
+      <p>
+        A cyber-physical system for leather image inspection,
+        and AI-driven quality utilities — built for speed, accuracy,
+        and modern devices.
+      </p>
+
+      <div class="card-grid">
+        <div class="card data-card">
+          <h3>Leather Authentication</h3>
+          <p>
+            Capture or upload leather surface images directly from mobile
+            or desktop environments for intelligent analysis and authentication.
+          </p>
+        </div>
+
+        <div class="card util-card">
+          <h3>Species Detection</h3>
+          <p>
+            Upload te image of the leather _ and let our model identify 
+            to which class the leather sample belongs to.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © 2026 Leather AI • Cyberpunk Edition
+  </footer>
+ <script src="utility_page.js"></script>
+</body>
+</html>

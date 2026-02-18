@@ -1,0 +1,455 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CYBER_CAM_V.1.0</title>
+    <style>
+        :root {
+            --neon-pink: #ff0055;
+            --neon-cyan: #00f3ff;
+            --dark-bg: #0d0d0d;
+            --glitch-font: 'Courier New', Courier, monospace;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            color: var(--neon-cyan);
+            font-family: var(--glitch-font);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scanline Overlay */
+        body::before {
+            content: " ";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #camera-container {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid var(--neon-pink);
+            margin: 10px;
+            box-shadow: 0 0 15px var(--neon-pink);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .btn-cyber {
+            background: transparent;
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 15px 25px;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+            transition: 0.3s;
+            text-shadow: 0 0 5px var(--neon-cyan);
+        }
+
+        .btn-cyber:active {
+            background: var(--neon-cyan);
+            color: black;
+        }
+
+        #shutter {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--neon-pink);
+            clip-path: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
+        .status-bar {
+            padding: 5px 15px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-bar">
+        <span>System: Active</span>
+        <span id="zoom-level">Zoom: 1.0x</span>
+        <span>ENC_DATA_ENABLED</span>
+    </div>
+
+    <div id="camera-container">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="ui-overlay">
+        <button class="btn-cyber" id="init-cam">Initialize</button>
+        <button class="btn-cyber" id="shutter">SHOT</button>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const shutter = document.getElementById('shutter');
+        const initBtn = document.getElementById('init-cam');
+        const zoomStatus = document.getElementById('zoom-level');
+        let imageCapture;
+        let track;
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // Use back camera
+                        focusMode: 'continuous',
+                        zoom: true
+                    }
+                });
+                
+                video.srcObject = stream;
+                track = stream.getVideoTracks()[0];
+                
+                // Wait for the track to load settings
+                setTimeout(applyCyberSettings, 1000);
+            } catch (err) {
+                console.error("Neural Link Failed: ", err);
+                alert("Camera access denied.");
+            }
+        }
+
+        async function applyCyberSettings() {
+            const capabilities = track.getCapabilities();
+            const settings = track.getSettings();
+
+            // Attempting 4x zoom or max available
+            if ('zoom' in capabilities) {
+                const targetZoom = Math.min(4, capabilities.zoom.max);
+                await track.applyConstraints({
+                    advanced: [{ zoom: targetZoom }]
+                });
+                zoomStatus.innerText = `Zoom: ${targetZoom}x`;
+            } else {
+                zoomStatus.innerText = "Zoom: Optical Only";
+            }
+
+            // Continuous autofocus
+            if ('focusMode' in capabilities && capabilities.focusMode.includes('continuous')) {
+                await track.applyConstraints({
+                    advanced: [{ focusMode: 'continuous' }]
+                });
+            }
+        }
+
+        shutter.addEventListener('click', () => {
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Visual feedback
+            video.style.filter = "brightness(2) contrast(2)";
+            setTimeout(() => { video.style.filter = "none"; }, 100);
+
+            // Download the "data shard" (image)
+            const link = document.createElement('a');
+            link.download = `CYBER_PHOTO_${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        initBtn.addEventListener('click', startCamera);
+    </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CYBER_CAM_V.2.0</title>
+    <style>
+        :root {
+            --neon-pink: #ff0055;
+            --neon-cyan: #00f3ff;
+            --dark-bg: #050505;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--dark-bg);
+            color: var(--neon-cyan);
+            font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Cyberpunk Grid Background */
+        body {
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        #viewport-container {
+            position: relative;
+            margin: 20px;
+            border: 2px solid var(--neon-cyan);
+            height: 50vh;
+            background: #000;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            overflow: hidden;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .btn-cyber {
+            background: transparent;
+            border: 2px solid var(--neon-pink);
+            color: var(--neon-pink);
+            padding: 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            clip-path: polygon(0 0, 100% 0, 100% 70%, 80% 100%, 0 100%);
+            font-weight: bold;
+        }
+
+        #gallery {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            overflow-x: auto;
+            border-top: 1px solid var(--neon-pink);
+        }
+
+        .shard {
+            width: 80px;
+            height: 80px;
+            border: 1px solid var(--neon-cyan);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .log-window {
+            font-size: 10px;
+            padding: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="log-window" id="logs">SYS_BOOT: READY...</div>
+
+    <div id="viewport-container">
+        <video id="video" autoplay playsinline></video>
+    </div>
+
+    <div class="controls">
+        <button class="btn-cyber" id="btn-init">INIT_LINK</button>
+        <button class="btn-cyber" id="btn-shot" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">CAPTURE</button>
+    </div>
+
+    <div id="gallery"></div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+    <!-- Add this overlay HTML somewhere inside <body> -->
+<div id="preview-overlay" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background: rgba(0,0,0,0.85);
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    z-index:50;
+">
+    <img id="preview-img" style="max-width:80%; max-height:80%; border:2px solid #00f3ff; box-shadow:0 0 15px #00f3ff;">
+    <div style="margin-top:20px; display:flex; gap:20px;">
+        <button id="confirm-send" class="btn-cyber" style="border-color:#00ff99; color:#00ff99;">CONFIRM</button>
+        <button id="cancel-send" class="btn-cyber" style="border-color:#ff0055; color:#ff0055;">CANCEL</button>
+    </div>
+</div>
+
+    <script>
+        
+        const video = document.getElementById('video');
+const logs = document.getElementById('logs');
+const gallery = document.getElementById('gallery');
+const canvas = document.getElementById('canvas');
+
+const previewOverlay = document.getElementById('preview-overlay');
+const previewImg = document.getElementById('preview-img');
+const confirmBtn = document.getElementById('confirm-send');
+const cancelBtn = document.getElementById('cancel-send');
+
+let streamTrack = null;
+
+function updateLog(msg) {
+    logs.innerText = `LOG: ${msg}`;
+}
+
+// Initialize camera
+async function initCamera() {
+    updateLog("REQUESTING_CAMERA...");
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }
+        });
+
+        video.srcObject = stream;
+        streamTrack = stream.getVideoTracks()[0];
+
+        video.onloadedmetadata = async () => {
+            await applyCameraSettings(true); // apply zoom immediately
+            updateLog("CAMERA_READY_ZOOMED");
+        };
+
+    } catch (err) {
+        updateLog("CAMERA_NOT_DETECTED");
+    }
+}
+async function applyCameraSettings(initial = false) {
+    if (!streamTrack) return;
+
+    const caps = streamTrack.getCapabilities();
+    const constraints = { advanced: [] };
+
+    if (caps.zoom) {
+        constraints.advanced.push({
+            zoom: Math.min(4, caps.zoom.max)
+        });
+    }
+
+    if (constraints.advanced.length > 0) {
+        await streamTrack.applyConstraints(constraints);
+        if (!initial) updateLog("ZOOM_CONFIRMED");
+    }
+}
+
+
+// Apply zoom and autofocus at capture time
+async function applyCameraSettings() {
+    if (!streamTrack) return;
+
+    const caps = streamTrack.getCapabilities();
+    const constraints = { advanced: [] };
+
+    if (caps.zoom) constraints.advanced.push({ zoom: Math.min(4, caps.zoom.max) });
+    if (caps.focusMode && caps.focusMode.includes("continuous")) constraints.advanced.push({ focusMode: "continuous" });
+
+    if (constraints.advanced.length > 0) {
+        await streamTrack.applyConstraints(constraints);
+        updateLog("ZOOM_&_FOCUS_APPLIED");
+    }
+}
+
+// Capture button
+document.getElementById('btn-shot').addEventListener('click', async () => {
+    // Apply zoom & focus before capturing
+    if (streamTrack) await applyCameraSettings();
+
+    const WIDTH = 1280;
+    const HEIGHT = 1024;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    const ctx = canvas.getContext('2d');
+
+    if (streamTrack) {
+        ctx.drawImage(video, 0, 0, WIDTH, HEIGHT);
+        showPreview(canvas.toDataURL());
+    } else {
+        const img = new Image();
+        img.src = video.style.backgroundImage.slice(5, -2);
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, WIDTH, HEIGHT);
+            showPreview(canvas.toDataURL());
+        };
+    }
+});
+
+// Show preview and handle confirmation
+function showPreview(dataURL) {
+    previewImg.src = dataURL;
+    previewOverlay.style.display = "flex";
+
+    confirmBtn.onclick = async () => {
+        previewOverlay.style.display = "none";
+        updateLog("SENDING_TO_SERVER...");
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataURL })
+            });
+            const result = await response.json();
+            if (result.status === "SUCCESS") {
+                updateLog("UPLOAD_COMPLETE");
+                const img = document.createElement('img');
+                img.src = dataURL;
+                img.className = 'shard';
+                gallery.prepend(img);
+            } else {
+                updateLog("UPLOAD_FAILED");
+            }
+        } catch (err) {
+            console.error(err);
+            updateLog("UPLOAD_ERROR");
+        }
+    };
+
+    cancelBtn.onclick = () => {
+        previewOverlay.style.display = "none";
+        updateLog("CAPTURE_CANCELLED");
+    };
+}
+
+// Init camera button
+document.getElementById('btn-init').addEventListener('click', initCamera);
+
+
+</script>
+</body>
+</html>

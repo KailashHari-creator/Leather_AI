@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@capacitor/android": "^8.0.1",
+    "@capacitor/cli": "^2.5.0",
+    "@capacitor/core": "^8.0.1",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
+    "path": "^0.12.7",
+    "socket.io": "^4.8.3"
+  }
+}

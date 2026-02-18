@@ -1,0 +1,521 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEATHER_AI // ADMIN_CORE</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff0055;
+            --glass-bg: rgba(10, 15, 20, 0.9);
+            --border-glow: 1px solid rgba(0, 243, 255, 0.3);
+        }
+
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: var(--neon-cyan);
+            font-family: 'Courier New', monospace;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+        }
+
+        /* Side Nav */
+        aside {
+            border-right: 2px solid var(--neon-pink);
+            background: rgba(20, 10, 10, 0.5);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: var(--border-glow);
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        .stat-val { font-size: 1.5rem; color: #fff; text-shadow: 0 0 5px var(--neon-cyan); }
+
+        /* Main Content */
+        main {
+            padding: 25px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: auto 300px 1fr;
+            gap: 20px;
+        }
+
+        .header-cell { grid-column: span 3; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon-cyan); padding-bottom: 10px; }
+
+        #clock { font-size: 2rem; font-weight: bold; color: var(--neon-pink); }
+
+        .chart-container { grid-column: span 2; background: rgba(0,0,0,0.4); border: var(--border-glow); padding: 15px; }
+
+        .log-container { 
+            grid-column: span 1; 
+            background: #000; 
+            border: 1px solid var(--neon-pink); 
+            padding: 10px; 
+            font-size: 0.75rem; 
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .gallery-grid { 
+            grid-column: span 3; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 15px; 
+        }
+
+        .shard-thumb {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border: 1px solid #333;
+            transition: 0.3s;
+        }
+
+        .shard-thumb:hover { border-color: var(--neon-cyan); transform: scale(1.05); }
+
+        h2 { text-transform: uppercase; font-size: 1rem; margin-bottom: 10px; color: var(--neon-pink); }
+    </style>
+</head>
+<body>
+
+<aside>
+    <h2>[CORE_METRICS]</h2>
+    <div class="stat-card">
+        <div>TOTAL_SHARDS</div>
+        <div class="stat-val" id="total-count">0</div>
+    </div>
+    <div class="stat-card">
+        <div>SYS_LATENCY</div>
+        <div class="stat-val">14ms</div>
+    </div>
+    <div class="stat-card">
+        <div>UPLINK_STATUS</div>
+        <div class="stat-val" style="color: #00ff99;">STABLE</div>
+    </div>
+    <button onclick="location.href='/data'" style="background:none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px; cursor: pointer;">RETURN_TO_UI</button>
+</aside>
+
+<main>
+    <div class="header-cell">
+        <h1>ADMIN_DASHBOARD_V.1</h1>
+        <div id="clock">00:00:00</div>
+    </div>
+
+    <div class="chart-container">
+        <h2>CAPTURE_RATE_ANALYSIS</h2>
+        <canvas id="captureChart"></canvas>
+    </div>
+
+    <div class="log-container" id="sys-logs">
+        <div>> INITIALIZING_LOG_STREAM...</div>
+    </div>
+
+    <div class="header-cell"><h2>RECENT_DATA_SHARDS</h2></div>
+    <div class="gallery-grid" id="admin-gallery">
+        </div>
+</main>
+
+<script>
+
+    // --- 1. Digital Clock (The 'uwu' requirement) ---
+    function updateClock() {
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
+                        now.getMinutes().toString().padStart(2, '0') + ":" + 
+                        now.getSeconds().toString().padStart(2, '0');
+        document.getElementById('clock').innerText = timeStr;
+    }
+    setInterval(updateClock, 1000);
+
+    
+
+    // --- 3. Core Data Sync ---
+    async function refreshData() {
+        try {
+            // Fetch Logs
+            const logRes = await fetch('/api/logs');
+            const logs = await logRes.json();
+            const logBox = document.getElementById('sys-logs');
+            logBox.innerHTML = logs.map(l => `<div>> ${l}</div>`).join('');
+            logBox.scrollTop = logBox.scrollHeight;
+
+            // Fetch Captures
+            const capRes = await fetch('/api/captures');
+            const captures = await capRes.json(); // Defined locally here
+            
+            // Update Stats
+            document.getElementById('total-count').innerText = captures.length;
+            
+            // Update Gallery
+            const gallery = document.getElementById('admin-gallery');
+            gallery.innerHTML = captures.map(c => `
+                <div style="text-align:center">
+                    <img src="${c.path}" class="shard-thumb" onerror="this.src='./grain/SHARD_1769186284339.png'">
+                    <div style="font-size:10px; margin-top:5px; color:#ff0055">${c.name}</div>
+                </div>
+            `).join('');
+
+            // Update Chart Data (last 10 minutes logic)
+            updateChartLogic(captures);
+
+        } catch (e) { 
+            console.error("CRITICAL_SYNC_FAILURE:", e); 
+        }
+    }
+
+    function updateChartLogic(data) {
+        // Simple logic: Group by last 6 captures or time intervals
+        const labels = data.slice(0, 7).reverse().map(c => new Date(c.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+        const values = data.slice(0, 7).reverse().map((_, i) => i + Math.floor(Math.random() * 5)); // Simulated frequency based on count
+
+        captureChart.data.labels = labels;
+        captureChart.data.datasets[0].data = values;
+        captureChart.update();
+    }
+
+    // Initialize & Set Loop
+    setInterval(refreshData, 5000);
+    refreshData();
+    updateClock();
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    // 1. Initialize Chart First
+    const ctx = document.getElementById('captureChart').getContext('2d');
+    const captureChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array(10).fill(''),
+            datasets: [{
+                data: Array(10).fill(0),
+                borderColor: '#00f3ff',
+                backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 2. Connect Socket (Safe now because scripts are loaded)
+    const socket = io();
+
+    // 3. Handle Initial Sync
+    socket.on('initial_state', (data) => {
+        document.getElementById('total-count').innerText = data.count;
+        updateGallery(data.captures);
+    });
+
+    // 4. Handle Real-time Uploads
+    socket.on('new_capture', (data) => {
+        // Add to gallery
+        const gallery = document.getElementById('admin-gallery');
+        const imgHtml = `
+            <div class="shard-box">
+                <img src="${data.path}" style="width:100%; height:100px; object-fit:cover;">
+                <p>${data.name}</p>
+            </div>
+        `;
+        gallery.insertAdjacentHTML('afterbegin', imgHtml);
+
+        // Update Stats
+        document.getElementById('total-count').innerText = data.totalCount;
+
+        // Update Graph (Simulate a spike on activity)
+        captureChart.data.datasets[0].data.shift();
+        captureChart.data.datasets[0].data.push(Math.floor(Math.random() * 10) + 5);
+        captureChart.update();
+        
+        // Add Log
+        const logBox = document.getElementById('sys-logs');
+        logBox.innerHTML += `<div>> NEW_DATA_RECEIVED: ${data.name}</div>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    });
+
+    function updateGallery(items) {
+        const gallery = document.getElementById('admin-gallery');
+        gallery.innerHTML = items.map(c => `
+            <div class="shard-box">
+                <img src="${c.path}" style="width:100%; height:100px; object-fit:cover;">
+                <p>${c.name}</p>
+            </div>
+        `).join('');
+    }
+
+    // Digital Clock (uwu)
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+</script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEATHER_AI // ADMIN_CORE</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <style>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff0055;
+            --glass: rgba(10, 15, 20, 0.85);
+            --panel-border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: var(--neon-cyan);
+            font-family: 'Courier New', monospace;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            background: rgba(15, 15, 15, 0.95);
+            border-right: 2px solid var(--neon-pink);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        #clock {
+            font-size: 2rem;
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: var(--panel-border);
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .stat-val { font-size: 1.8rem; color: #fff; }
+
+        /* Main Dashboard Grid */
+        main {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            grid-template-rows: 300px 1fr;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .panel {
+            background: var(--glass);
+            border: var(--panel-border);
+            padding: 15px;
+            position: relative;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        h2 { font-size: 0.9rem; margin: 0 0 15px 0; color: var(--neon-pink); text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Components */
+        #map { height: calc(100% - 40px); width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(0.6); }
+        
+        #sys-logs {
+            height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border: 1px solid #111;
+        }
+
+        .log-entry { margin-bottom: 5px; border-left: 2px solid var(--neon-pink); padding-left: 8px; }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .shard-container {
+            border: 1px solid #222;
+            padding: 5px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .shard-container:hover { border-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+
+        .shard-img { width: 100%; height: 80px; object-fit: cover; }
+
+        button {
+            background: none;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        button:hover { background: var(--neon-cyan); color: #000; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <div id="clock">00:00:00</div>
+    
+    <div class="stat-card">
+        <h2>TOTAL_SHARDS</h2>
+        <div class="stat-val" id="total-count">0</div>
+    </div>
+
+    <div class="stat-card">
+        <h2>CORE_STATUS</h2>
+        <div class="stat-val" style="color: #00ff99; font-size: 1.2rem;">ONLINE_STABLE</div>
+    </div>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+        <button onclick="window.location.href='/data'">Capture Data</button>
+        <button onclick="window.location.href='/'">Logout</button>
+    </div>
+</aside>
+
+<main>
+    <div class="panel">
+        <h2>GLOBAL_SOURCING_NETWORK</h2>
+        <div id="map"></div>
+    </div>
+
+    <div class="panel">
+        <h2>CAPTURE_INTENSITY_STREAM</h2>
+        <canvas id="capChart"></canvas>
+    </div>
+
+    <div class="panel full-width">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <div>
+                <h2>SYSTEM_LOG_STREAM</h2>
+                <div id="sys-logs"></div>
+            </div>
+            <div>
+                <h2>RECENT_SHARD_GALLERY</h2>
+                <div class="gallery-grid" id="admin-gallery"></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    /** 1. UI INITIALIZATION **/
+    
+    // Clock (The uwu factor)
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // World Map (Leaflet)
+    const map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Activity Chart (Chart.js)
+    const ctx = document.getElementById('capChart').getContext('2d');
+    const capChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['','','','','','','','','',''],
+            datasets: [{
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                borderColor: '#00f3ff',
+                backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { display: false }, x: { display: false } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    /** 2. WEBSOCKET LOGIC **/
+    const socket = io();
+
+    // Initial Sync from Server
+    socket.on('init_sync', (data) => {
+        updateGallery(data.captures);
+        document.getElementById('total-count').innerText = data.captures.length;
+        data.logs.forEach(addLog);
+    });
+
+    // Real-time Update Handler
+    socket.on('new_data', (data) => {
+        // Update Gallery
+        updateGallery(data.allCaptures);
+        document.getElementById('total-count').innerText = data.total;
+        
+        // Update Logs
+        addLog({ time: new Date().toLocaleTimeString(), msg: `RECEIVED: ${data.name}` });
+
+        // Update Chart (Random spike to simulate activity)
+        capChart.data.datasets[0].data.shift();
+        capChart.data.datasets[0].data.push(Math.floor(Math.random() * 10) + 5);
+        capChart.update();
+
+        // Add Map Blip
+        const lat = (Math.random() * 140) - 70;
+        const lng = (Math.random() * 360) - 180;
+        const marker = L.circleMarker([lat, lng], { radius: 8, color: '#ff0055' }).addTo(map);
+        setTimeout(() => map.removeLayer(marker), 5000);
+    });
+
+    socket.on('sys_log', addLog);
+
+    function updateGallery(items) {
+        const container = document.getElementById('admin-gallery');
+        container.innerHTML = items.map(item => `
+            <div class="shard-container">
+                <img src="${item.path}" class="shard-img">
+                <div style="font-size: 8px; color: #555; margin-top: 4px;">${item.name}</div>
+            </div>
+        `).join('');
+    }
+
+    function addLog(log) {
+        const logBox = document.getElementById('sys-logs');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `<span style="color:var(--neon-pink)">[${log.time}]</span> ${log.msg}`;
+        logBox.prepend(entry);
+    }
+</script>
+</body>
+</html>
